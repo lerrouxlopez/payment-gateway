@@ -17,54 +17,77 @@ use PayPal\Api\PaymentExecution;
 
 class PayPalController extends Controller
 {
-    public function createPayment(){
-        $apiContext = new \PayPal\Rest\ApiContext(
-            new \PayPal\Auth\OAuthTokenCredential(
-                'ATMWXycDhqex03Q5ugXB2ZNOelJzEj4-U5VZeWn0Edqp-a-FZdV3BfxjIzsZZb5M9mRxazxRRlzLnfM8',     // ClientID
-                'EHvVI4LV0oWYKjxqur9n60gWbjQdu0ZLDZyHD9rgzsXsLlW-zZjINXFX3NvD_GZOu6ZWoZ2_331q6Euf'      // ClientSecret
-            )
-        );
+    public function createPayment(Request $request){
+        $products = json_decode($request->products,1);
+
+        if($request->env == "sandbox"){
+            $apiContext = new \PayPal\Rest\ApiContext(
+                new \PayPal\Auth\OAuthTokenCredential(
+                    'ATMWXycDhqex03Q5ugXB2ZNOelJzEj4-U5VZeWn0Edqp-a-FZdV3BfxjIzsZZb5M9mRxazxRRlzLnfM8',     // ClientID
+                    'EHvVI4LV0oWYKjxqur9n60gWbjQdu0ZLDZyHD9rgzsXsLlW-zZjINXFX3NvD_GZOu6ZWoZ2_331q6Euf'      // ClientSecret
+                )
+            );
+        }else{
+            $apiContext = new \PayPal\Rest\ApiContext(
+                new \PayPal\Auth\OAuthTokenCredential(
+                    'AQ7v-KloOTY3jvQVG9A-s3RDNQOJrjPGcBUWvzI1XZtnStmGgMisCdOa_vxCbQvUxBNqWiwszRwDxmKO',     // ClientID
+                    'EI5S6kTxJQir4JfXrouYX2QGzIwm-qvqJlrCHXRs91OBMVtoXoESI_9ICH2fCZaF9YLBILspNrwNCOuM'      // ClientSecret
+                )
+            );
+            $apiContext->setConfig(
+                array(
+                    'log.LogEnabled' => true,
+                    'log.FileName' => 'PayPal.log',
+                    'log.LogLevel' => 'DEBUG',
+                    'mode' => 'live'
+                )
+            );
+
+        }
 
         $payer = new Payer();
         $payer->setPaymentMethod("paypal");
-
-        $item1 = new Item();
-        $item1->setName('Ground Coffee 40 oz')
-            ->setCurrency('USD')
-            ->setQuantity(1)
-            ->setSku("123123") // Similar to `item_number` in Classic API
-            ->setPrice(7.5);
-
+        $total = 0;
+        $items = array();
+        foreach ($products as $key => $product){
+            ${"item".$key} = new Item();
+            ${"item".$key}->setName($product['name'])
+                ->setCurrency($product['currency'])
+                ->setQuantity($product['quantity'])
+                ->setSku($product['sku']) // Similar to `item_number` in Classic API
+                ->setPrice($product['price']);
+            $total += ($product['quantity'] * $product['price']);
+            $items[]=${"item".$key};
+        }
 
         $itemList = new ItemList();
-        $itemList->setItems(array($item1));
+        $itemList->setItems($items);
 
         $details = new Details();
-        $details->setShipping(1.2)
-            ->setTax(1.3)
-            ->setSubtotal(17.50);
+        $details->setShipping(0)
+            ->setTax(0)
+            ->setSubtotal($total);
 
         $amount = new Amount();
         $amount->setCurrency("USD")
-            ->setTotal(20)
+            ->setTotal($total)
             ->setDetails($details);
 
         $transaction = new Transaction();
         $transaction->setAmount($amount)
             ->setItemList($itemList)
             ->setDescription("Payment description")
-            ->setInvoiceNumber(uniqid());
-
+            ->setInvoiceNumber("IBL".uniqid());
         $redirectUrls = new RedirectUrls();
-        $redirectUrls->setReturnUrl("http://127.0.0.1:8000/")
-            ->setCancelUrl("http://127.0.0.1:8000/");
+        $redirectUrls->setReturnUrl($request->return_url)
+            ->setCancelUrl($request->cancel_url);
 
         // Add NO SHIPPING OPTION
         $inputFields = new InputFields();
         $inputFields->setNoShipping(1);
 
         $webProfile = new WebProfile();
-        $webProfile->setName('test' . uniqid())->setInputFields($inputFields);
+        $webProfile->setName('IBL' . uniqid())->setInputFields($inputFields);
 
         $webProfileId = $webProfile->create($apiContext)->getId();
 
@@ -86,12 +109,32 @@ class PayPalController extends Controller
     }
 
     public function executePayment(Request $request){
-        $apiContext = new \PayPal\Rest\ApiContext(
-            new \PayPal\Auth\OAuthTokenCredential(
-                'ATMWXycDhqex03Q5ugXB2ZNOelJzEj4-U5VZeWn0Edqp-a-FZdV3BfxjIzsZZb5M9mRxazxRRlzLnfM8',     // ClientID
-                'EHvVI4LV0oWYKjxqur9n60gWbjQdu0ZLDZyHD9rgzsXsLlW-zZjINXFX3NvD_GZOu6ZWoZ2_331q6Euf'      // ClientSecret
-            )
-        );
+        if($request->env == "sandbox"){
+            $apiContext = new \PayPal\Rest\ApiContext(
+                new \PayPal\Auth\OAuthTokenCredential(
+                    'ATMWXycDhqex03Q5ugXB2ZNOelJzEj4-U5VZeWn0Edqp-a-FZdV3BfxjIzsZZb5M9mRxazxRRlzLnfM8',     // ClientID
+                    'EHvVI4LV0oWYKjxqur9n60gWbjQdu0ZLDZyHD9rgzsXsLlW-zZjINXFX3NvD_GZOu6ZWoZ2_331q6Euf'      // ClientSecret
+                )
+            );
+        }else{
+
+            $apiContext = new \PayPal\Rest\ApiContext(
+                new \PayPal\Auth\OAuthTokenCredential(
+                    'AQ7v-KloOTY3jvQVG9A-s3RDNQOJrjPGcBUWvzI1XZtnStmGgMisCdOa_vxCbQvUxBNqWiwszRwDxmKO',     // ClientID
+                    'EI5S6kTxJQir4JfXrouYX2QGzIwm-qvqJlrCHXRs91OBMVtoXoESI_9ICH2fCZaF9YLBILspNrwNCOuM'      // ClientSecret
+                )
+            );
+            $apiContext->setConfig(
+                array(
+                    'log.LogEnabled' => true,
+                    'log.FileName' => 'PayPal.log',
+                    'log.LogLevel' => 'DEBUG',
+                    'mode' => 'live'
+                )
+            );
+
+        }
+
 
         $paymentId = $request->paymentID;
         $payment = Payment::get($paymentId, $apiContext);

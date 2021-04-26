@@ -18,6 +18,6 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('/create-payment', 'PayPalController@createPayment');
-Route::post('/execute-payment', 'PayPalController@executePayment');
+Route::post('/paypal/create-payment', 'PayPalController@createPayment');
+Route::post('/paypal/execute-payment', 'PayPalController@executePayment');
 Route::post('/stripe-payment', 'StripeController@payment');

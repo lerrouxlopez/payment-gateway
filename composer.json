@@ -16,7 +16,8 @@
         "laravel/tinker": "^2.0",
         "laravel/ui": "2.4",
         "paypal/rest-api-sdk-php": "^1.14",
-        "stripe/stripe-php": "^7.77"
+        "stripe/stripe-php": "^7.77",
+        "ext-json": "*"
     },
     "require-dev": {
         "facade/ignition": "^2.0",

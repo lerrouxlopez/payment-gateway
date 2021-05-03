@@ -9,58 +9,35 @@
         <!-- Fonts -->
         <link href="https://fonts.googleapis.com/css?family=Nunito:200,600" rel="stylesheet">
 
-        <!-- Styles -->
-        <style>
-            html, body {
-                background-color: #fff;
-                color: #636b6f;
-                font-family: 'Nunito', sans-serif;
-                font-weight: 200;
-                height: 100vh;
-                margin: 0;
+        <style type="text/css">
+            .StripeElement {
+                box-sizing: border-box;
+
+                height: 40px;
+
+                padding: 10px 12px;
+                width: 25%;
+                border: 1px solid transparent;
+                border-radius: 4px;
+                background-color: white;
+
+                box-shadow: 0 1px 3px 0 #e6ebf1;
+                -webkit-transition: box-shadow 150ms ease;
+                transition: box-shadow 150ms ease;
             }
 
-            .full-height {
-                height: 100vh;
+            .StripeElement--focus {
+                box-shadow: 0 1px 3px 0 #cfd7df;
             }
 
-            .flex-center {
-                align-items: center;
-                display: flex;
-                justify-content: center;
+            .StripeElement--invalid {
+                border-color: #fa755a;
             }
 
-            .position-ref {
-                position: relative;
+            .StripeElement--webkit-autofill {
+                background-color: #fefde5 !important;
             }
 
-            .top-right {
-                position: absolute;
-                right: 10px;
-                top: 18px;
-            }
-
-            .content {
-                text-align: center;
-            }
-
-            .title {
-                font-size: 84px;
-            }
-
-            .links > a {
-                color: #636b6f;
-                padding: 0 25px;
-                font-size: 13px;
-                font-weight: 600;
-                letter-spacing: .1rem;
-                text-decoration: none;
-                text-transform: uppercase;
-            }
-
-            .m-b-md {
-                margin-bottom: 30px;
-            }
         </style>
     </head>
     <body>
@@ -70,21 +47,19 @@
                 <br />
                 <span>Pay With Stripe</span>
                 <div>
-                    <form action="/api/stripe-payment" method="POST">
-                        <input type="hidden" name="amount" id="amount" value="10000">
-                        <script
-                            src="https://checkout.stripe.com/checkout.js"
-                            class="stripe-button"
-                            data-key="pk_test_KbjXHeFVISEE9CJz4zvOO80e"
-                            data-amount= "10000"
-                            data-name="Eduardo Arboleda"
-                            data-description="SAMPLE CHARGE"
-                            data-image="https://stripe.com/img/documentation/checkout/marketplace.png"
-                            data-locale="auto"
-                            data-currency="USD"
-                        >
+                    <form method="post" id="payment-form">
+                        <div class="form-row">
+                            <label for="card-element">
+                                Credit or debit card
+                            </label>
+                            <div id="card-element">
+                                <!-- A Stripe Element will be inserted here. -->
+                            </div>
 
-                        </script>
+                            <!-- Used to display form errors. -->
+                            <div id="card-errors" role="alert"></div>
+                        </div>
+                        <button class="btn btn-primary">Submit Payment</button>
                     </form>
                 </div>
 
@@ -92,6 +67,110 @@
 
         </div>
     </body>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+
+        //required variables
+        var api_url = "http://127.0.0.1:8000/api/stripe-payment";
+        var amount = 60000; //pass amount in centavos example if 100 then pass 10000
+        var invoice = "IBL0000"; //in creating invoice prepend IBL to the order_id
+        var env = "Sandbox";
+        //==================== IMPORTANT PLEASE HIDE THESE DETAILS ====================//
+        //
+        var publishable_key = "pk_live_L9jA032oYWBP6ErThwxk3xwW";
+        if (env == "Sandbox"){
+            publishable_key = "pk_test_KbjXHeFVISEE9CJz4zvOO80e";
+        }
+        //
+        //==================== IMPORTANT PLEASE HIDE THESE DETAILS ====================//
+
+        // Create a Stripe client.
+        var stripe = Stripe(publishable_key);
+
+        // Create an instance of Elements.
+        var elements = stripe.elements();
+
+        // Custom styling can be passed to options when creating an Element.
+        // (Note that this demo uses a wider set of styles than the guide below.)
+        var style = {
+            base: {
+                color: '#32325d',
+                fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+                fontSmoothing: 'antialiased',
+                fontSize: '16px',
+                '::placeholder': {
+                    color: '#aab7c4'
+                }
+            },
+            invalid: {
+                color: '#fa755a',
+                iconColor: '#fa755a'
+            }
+        };
+
+        // Create an instance of the card Element.
+        var card = elements.create('card', {style: style});
+
+        // Add an instance of the card Element into the `card-element` <div>.
+        card.mount('#card-element');
+
+        // Handle real-time validation errors from the card Element.
+        card.addEventListener('change', function(event) {
+            var displayError = document.getElementById('card-errors');
+            if (event.error) {
+                displayError.textContent = event.error.message;
+            } else {
+                displayError.textContent = '';
+            }
+        });
+
+        // Handle form submission.
+        var form = document.getElementById('payment-form');
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            stripe.createToken(card).then(function(result) {
+                if (result.error) {
+                    // Inform the user if there was an error.
+                    var errorElement = document.getElementById('card-errors');
+                    errorElement.textContent = result.error.message;
+                } else {
+                    // Send the token to your server.
+                    stripeTokenHandler(result.token);
+                }
+            });
+        });
+
+        // Submit the form with the token ID.
+        function stripeTokenHandler(token) {
+            // Insert the token ID into the form so it gets submitted to the server
+            var form = document.getElementById('payment-form');
+
+            //CALL PAYMENT API
+
+            $.ajax({
+                type: "POST",
+                url: api_url,
+                data: {
+                    stripeToken:token.id,
+                    amount:amount,
+                    invoice:invoice,
+                    env:env
+                },
+                dataType: "json",
+                encode: true,
+            }).done(function (data) {
+
+                //check for data.status == "succeeded" for successful transaction
+                //save data.id as our reference to stripe API. This will be used to retrieve orders or refund orders
+                console.log(data);
+            });
+
+
+
+        }
+    </script>
     <script src="https://www.paypalobjects.com/api/checkout.js"></script>
     <script>
         paypal.Button.render({

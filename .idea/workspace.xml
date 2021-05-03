@@ -3,9 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="c61b21f4-879f-4c21-b798-78419895b26a" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/Http/Controllers/PayPalController.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Http/Controllers/PayPalController.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/composer.json" beforeDir="false" afterPath="$PROJECT_DIR$/composer.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/routes/api.php" beforeDir="false" afterPath="$PROJECT_DIR$/routes/api.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/Http/Controllers/StripeController.php" beforeDir="false" afterPath="$PROJECT_DIR$/app/Http/Controllers/StripeController.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/views/welcome.blade.php" beforeDir="false" afterPath="$PROJECT_DIR$/resources/views/welcome.blade.php" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -166,7 +165,9 @@
       <workItem from="1618756845995" duration="12388000" />
       <workItem from="1618837891622" duration="833000" />
       <workItem from="1619284183721" duration="18000" />
-      <workItem from="1619427027163" duration="11549000" />
+      <workItem from="1619427027163" duration="13512000" />
+      <workItem from="1619988252993" duration="2770000" />
+      <workItem from="1619993242096" duration="9297000" />
     </task>
     <servers />
   </component>
@@ -178,7 +179,9 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
           </value>
         </entry>
       </map>
